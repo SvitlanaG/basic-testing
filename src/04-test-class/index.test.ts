@@ -1,5 +1,15 @@
 // Uncomment the code below and write your tests
-import { getBankAccount, InsufficientFundsError, TransferFailedError } from '.';
+import {
+  getBankAccount,
+  InsufficientFundsError,
+  TransferFailedError,
+  SynchronizationFailedError,
+} from '.';
+import { random } from 'lodash';
+
+jest.mock('lodash', () => ({
+  random: jest.fn(),
+}));
 
 describe('BankAccount', () => {
   test('should create account with initial balance', () => {
@@ -89,14 +99,43 @@ describe('BankAccount', () => {
   });
 
   test('fetchBalance should return number in case if request did not failed', async () => {
-    // Write your tests here
+    // Arrange
+    const account = getBankAccount(5500);
+
+    (random as jest.Mock).mockImplementationOnce(() => 100);
+    (random as jest.Mock).mockImplementationOnce(() => 1);
+
+    // Act
+    const balance = await account.fetchBalance();
+
+    // Assert
+    expect(balance).toBe(100);
   });
 
   test('should set new balance if fetchBalance returned number', async () => {
-    // Write your tests here
+    // Arrange
+    const account = getBankAccount(10000);
+
+    (random as jest.Mock).mockImplementationOnce(() => 50);
+    (random as jest.Mock).mockImplementationOnce(() => 1);
+
+    // Act
+    await account.synchronizeBalance();
+
+    // Assert
+    expect(account.getBalance()).toBe(50);
   });
 
   test('should throw SynchronizationFailedError if fetchBalance returned null', async () => {
-    // Write your tests here
+    // Arrange
+    const account = getBankAccount(10000);
+
+    (random as jest.Mock).mockImplementationOnce(() => null);
+    (random as jest.Mock).mockImplementationOnce(() => 0);
+
+    // Act & Assert
+    await expect(account.synchronizeBalance()).rejects.toThrow(
+      SynchronizationFailedError,
+    );
   });
 });
